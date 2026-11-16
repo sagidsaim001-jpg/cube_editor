@@ -29,7 +29,7 @@ class Draft {
     this.music,
     this.musicPath,
     this.musicArtist,
-    this.createdAt,
+    DateTime? createdAt,
     this.videoPath,
     this.exportSettings = const {},
     this.lyrics = const [],
