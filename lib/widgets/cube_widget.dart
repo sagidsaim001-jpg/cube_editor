@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../models/draft.dart';
 
@@ -63,7 +63,7 @@ class CubeWidget extends StatelessWidget {
     final transform = Matrix4.identity()
       ..setEntry(3, 2, 0.0012)
       ..rotateY(angle)
-      ..translate(0.0, 0.0, half);
+      ..translateByDouble(0.0, 0.0, half, 1.0);
 
     return Transform(
       alignment: Alignment.center,

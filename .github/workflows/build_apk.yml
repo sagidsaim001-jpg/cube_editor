@@ -85,6 +85,8 @@ jobs:
           PY
       - name: Analyze Dart code
         run: flutter analyze
+      - name: Run widget tests
+        run: flutter test
       - name: Build release APK
         run: flutter build apk --release
       - name: Upload APK
