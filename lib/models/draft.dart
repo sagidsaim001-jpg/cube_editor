@@ -1,10 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 
-/// One editable side of the cube.
 class CubeFace {
   CubeFace({this.color = const Color(0xFF6C5CE7), this.fontFamily, List<String>? texts})
       : texts = texts ?? [];
-
   Color color;
   String? fontFamily;
   final List<String> texts;
@@ -22,7 +20,6 @@ class CubeFace {
       );
 }
 
-/// Project data. Fields are deliberately JSON-friendly for future timeline data.
 class Draft {
   Draft({
     required this.name,
@@ -30,6 +27,8 @@ class Draft {
     String? id,
     List<CubeFace>? faces,
     this.music,
+    this.musicPath,
+    this.musicArtist,
     this.createdAt,
     this.videoPath,
     this.exportSettings = const {},
@@ -45,6 +44,8 @@ class Draft {
   DateTime createdAt;
   final List<CubeFace> faces;
   String? music;
+  String? musicPath;
+  String? musicArtist;
   String? videoPath;
   Map<String, dynamic> exportSettings;
   List<Map<String, dynamic>> lyrics;
@@ -57,6 +58,8 @@ class Draft {
         'createdAt': createdAt.toIso8601String(),
         'faces': faces.map((face) => face.toJson()).toList(),
         'music': music,
+        'musicPath': musicPath,
+        'musicArtist': musicArtist,
         'videoPath': videoPath,
         'exportSettings': exportSettings,
         'lyrics': lyrics,
@@ -77,6 +80,8 @@ class Draft {
               .toList() ??
           List.generate(4, (_) => CubeFace()),
       music: json['music'] as String?,
+      musicPath: json['musicPath'] as String?,
+      musicArtist: json['musicArtist'] as String?,
       videoPath: json['videoPath'] as String?,
       exportSettings: Map<String, dynamic>.from(json['exportSettings'] as Map? ?? {}),
       lyrics: (json['lyrics'] as List?)
