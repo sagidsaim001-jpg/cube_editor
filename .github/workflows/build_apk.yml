@@ -1,0 +1,54 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+ njobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate Android project if missing
+        run: |
+          if [ ! -d android ]; then
+            flutter create --platforms=android --org com.example --project-name cube_editor .
+          fi
+      - name: Add audio permissions to AndroidManifest
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/src/main/AndroidManifest.xml')
+          s = p.read_text(encoding='utf-8')
+          perms = ('    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\\n'
+                   '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>\\n')
+          if 'READ_MEDIA_AUDIO' not in s:
+              s = s.replace('<application', perms + '    <application', 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Get packages
+        run: flutter pub get
+      - name: Analyze Dart code
+        run: flutter analyze
+      - name: Build release APK
+        run: flutter build apk --release
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: cube-editor-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
