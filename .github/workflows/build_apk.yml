@@ -58,6 +58,13 @@ jobs:
 
           for gradle in matches:
               source = gradle.read_text(encoding='utf-8')
+              # This archived plugin pins compileSdk 33, which is too old for its AndroidX dependencies.
+              import re
+              source, sdk_updates = re.subn(r'(compileSdkVersion\\s+)\\d+', r'\\g<1>35', source)
+              if sdk_updates == 0:
+                  source, sdk_updates = re.subn(r'(compileSdk\\s+)\\d+', r'\\g<1>35', source)
+              if sdk_updates == 0:
+                  source = source.replace('android {', 'android {\\n    compileSdkVersion 35', 1)
               if 'namespace' not in source:
                   source = source.replace(
                       'android {',
