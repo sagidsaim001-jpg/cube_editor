@@ -7,14 +7,15 @@ on:
 
 permissions:
   contents: read
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -34,14 +35,58 @@ jobs:
           from pathlib import Path
           p = Path('android/app/src/main/AndroidManifest.xml')
           s = p.read_text(encoding='utf-8')
-          perms = ('    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\n'
-                   '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>\n')
+          perms = ('    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\\n'
+                   '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>\\n')
           if 'READ_MEDIA_AUDIO' not in s:
               s = s.replace('<application', perms + '    <application', 1)
               p.write_text(s, encoding='utf-8')
           PY
       - name: Get packages
         run: flutter pub get
+      - name: Patch legacy audio plugin for modern Android Gradle
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          cache = Path(os.environ.get('PUB_CACHE', Path.home() / '.pub-cache'))
+          roots = [cache / 'hosted' / 'pub.dev', cache / 'hosted' / 'pub.dartlang.org']
+          matches = []
+          for root in roots:
+              if root.exists():
+                  matches.extend(root.glob('on_audio_query_android-*/android/build.gradle'))
+
+          for gradle in matches:
+              source = gradle.read_text(encoding='utf-8')
+              if not re.search(r'\\bnamespace\\s*[= ]', source):
+                  source = re.sub(
+                      r'android\\s*\\{',
+                      "android {\\n    namespace 'com.lucasjosino.on_audio_query'",
+                      source,
+                      count=1,
+                  )
+              if 'compileOptions' not in source:
+                  source = re.sub(
+                      r'(android\\s*\\{[^\\n]*\\n)',
+                      r"\\1    compileOptions {\\n        sourceCompatibility JavaVersion.VERSION_17\\n        targetCompatibility JavaVersion.VERSION_17\\n    }\\n",
+                      source,
+                      count=1,
+                  )
+              else:
+                  source = source.replace('JavaVersion.VERSION_1_8', 'JavaVersion.VERSION_17')
+              if 'jvmTarget' not in source:
+                  source = re.sub(
+                      r'(android\\s*\\{)',
+                      r"\\1\\n    kotlinOptions { jvmTarget = '17' }",
+                      source,
+                      count=1,
+                  )
+              gradle.write_text(source, encoding='utf-8')
+              print(f'Patched {gradle}')
+          if not matches:
+              print('No legacy on_audio_query_android Gradle file found; continuing.')
+          PY
       - name: Analyze Dart code
         run: flutter analyze
       - name: Build release APK
