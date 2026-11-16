@@ -6,6 +6,7 @@ import 'package:just_audio/just_audio.dart';
 import '../models/draft.dart';
 import '../widgets/cube_widget.dart';
 import 'music_screen.dart';
+import 'lyrics_screen.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({super.key, this.draft});
@@ -128,6 +129,14 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
+  Future<void> _openLyrics() async {
+    final lines = await Navigator.push<List<Map<String, dynamic>>>(
+      context,
+      MaterialPageRoute(builder: (_) => LyricsScreen(player: _audio, initialLyrics: _draft.lyrics)),
+    );
+    if (lines != null && mounted) setState(() => _draft.lyrics = lines);
+  }
+
   Future<void> _openMusic() async {
     final song = await Navigator.push<Map<String, String>>(
       context, MaterialPageRoute(builder: (_) => const MusicScreen()),
@@ -214,7 +223,7 @@ class _EditorScreenState extends State<EditorScreen> {
               _ToolButton(icon: Icons.text_fields, label: 'Text', onTap: _addText),
               _ToolButton(icon: Icons.font_download, label: 'Fonts', onTap: _pickFont),
               _ToolButton(icon: Icons.palette, label: 'Color', onTap: _pickColor),
-              _ToolButton(icon: Icons.key, label: 'Keyframe', onTap: () => _soon('Keyframe')),
+              _ToolButton(icon: Icons.lyrics, label: 'Lyrics', onTap: _openLyrics),
             ]))),
         ),
       ]),
