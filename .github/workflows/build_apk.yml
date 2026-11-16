@@ -35,8 +35,8 @@ jobs:
           from pathlib import Path
           p = Path('android/app/src/main/AndroidManifest.xml')
           s = p.read_text(encoding='utf-8')
-          perms = ('    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\\n'
-                   '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>\\n')
+          perms = ('    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\n'
+                   '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>\n')
           if 'READ_MEDIA_AUDIO' not in s:
               s = s.replace('<application', perms + '    <application', 1)
               p.write_text(s, encoding='utf-8')
@@ -48,7 +48,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import os
-          import re
 
           cache = Path(os.environ.get('PUB_CACHE', Path.home() / '.pub-cache'))
           roots = [cache / 'hosted' / 'pub.dev', cache / 'hosted' / 'pub.dartlang.org']
@@ -59,28 +58,25 @@ jobs:
 
           for gradle in matches:
               source = gradle.read_text(encoding='utf-8')
-              if not re.search(r'\\bnamespace\\s*[= ]', source):
-                  source = re.sub(
-                      r'android\\s*\\{',
-                      "android {\\n    namespace 'com.lucasjosino.on_audio_query'",
-                      source,
-                      count=1,
+              if 'namespace' not in source:
+                  source = source.replace(
+                      'android {',
+                      "android {\n    namespace 'com.lucasjosino.on_audio_query'",
+                      1,
                   )
               if 'compileOptions' not in source:
-                  source = re.sub(
-                      r'(android\\s*\\{[^\\n]*\\n)',
-                      r"\\1    compileOptions {\\n        sourceCompatibility JavaVersion.VERSION_17\\n        targetCompatibility JavaVersion.VERSION_17\\n    }\\n",
-                      source,
-                      count=1,
+                  source = source.replace(
+                      'android {',
+                      "android {\n    compileOptions {\n        sourceCompatibility JavaVersion.VERSION_17\n        targetCompatibility JavaVersion.VERSION_17\n    }",
+                      1,
                   )
               else:
                   source = source.replace('JavaVersion.VERSION_1_8', 'JavaVersion.VERSION_17')
               if 'jvmTarget' not in source:
-                  source = re.sub(
-                      r'(android\\s*\\{)',
-                      r"\\1\\n    kotlinOptions { jvmTarget = '17' }",
-                      source,
-                      count=1,
+                  source = source.replace(
+                      'android {',
+                      "android {\n    kotlinOptions { jvmTarget = '17' }",
+                      1,
                   )
               gradle.write_text(source, encoding='utf-8')
               print(f'Patched {gradle}')
